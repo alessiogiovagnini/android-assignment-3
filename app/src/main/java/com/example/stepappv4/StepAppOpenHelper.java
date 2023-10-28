@@ -7,6 +7,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -126,6 +129,32 @@ public class StepAppOpenHelper extends SQLiteOpenHelper {
         return map;
     }
 
+    public static Map<String , Integer> loadStepsByWeek(Context context, Date date) {
+
+        Map<String, Integer>  map = new HashMap<>();
+
+        StepAppOpenHelper databaseHelper = new StepAppOpenHelper(context);
+        SQLiteDatabase database = databaseHelper.getReadableDatabase();
+
+        Cursor cursor = database.rawQuery("SELECT day, COUNT(*)  FROM num_steps " +
+                "WHERE day <= ? GROUP BY day ORDER BY  day DESC LIMIT 7", new String [] {date.toString()});
+
+        cursor.moveToFirst();
+        for (int index=0; index < cursor.getCount(); index++){
+            String tmpKey = cursor.getString(0);
+            Integer tmpValue = Integer.parseInt(cursor.getString(1));
+
+            map.put(tmpKey, tmpValue);
+
+
+            cursor.moveToNext();
+        }
+
+        cursor.close();
+        database.close();
+
+        return map;
+    }
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
