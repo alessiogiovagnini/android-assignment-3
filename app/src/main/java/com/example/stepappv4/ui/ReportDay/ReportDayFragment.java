@@ -50,10 +50,6 @@ public class ReportDayFragment extends Fragment {
 
         // Create column chart
         anyChartView = root.findViewById(R.id.dayByChart);
-        System.out.println("{start}>>>>>>>>>>>>>>>>>>>");
-        System.out.println(anyChartView);
-        System.out.println(R.id.loadingBarDay);
-        System.out.println("{end}>>>>>>>>>>>>>>>>>>>");
 
         anyChartView.setProgressBar(root.findViewById(R.id.loadingBarDay));
 
@@ -76,7 +72,7 @@ public class ReportDayFragment extends Fragment {
         // 1 (YOUR TURN): Get the map with hours and number of steps for today
         //  from the database and assign it to variable stepsByHour
 
-        this.stepsByDay = StepAppOpenHelper.loadStepsByWeek(getContext(), this.cDate);
+        Map<String, Integer> weeklySteps = StepAppOpenHelper.loadStepsByWeek(getContext(), new Date());
 
 
         //***** Create column chart using AnyChart library *********/
@@ -84,7 +80,7 @@ public class ReportDayFragment extends Fragment {
 
         List<DataEntry> data = new ArrayList<>();
 
-        for (Map.Entry<String,Integer> entry : this.stepsByDay.entrySet())
+        for (Map.Entry<String,Integer> entry : weeklySteps.entrySet())
             data.add(new ValueDataEntry(entry.getKey(), entry.getValue()));
 
         Column column = cartesian.column(data);
@@ -106,10 +102,6 @@ public class ReportDayFragment extends Fragment {
         cartesian.tooltip().positionMode(TooltipPositionMode.POINT);
         cartesian.interactivity().hoverMode(HoverMode.BY_X);
         cartesian.yScale().minimum(0);
-
-
-        // TODO 10 (YOUR TURN): Modify the UI of the cartesian
-
 
         return cartesian;
     }

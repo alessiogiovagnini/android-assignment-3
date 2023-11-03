@@ -7,6 +7,11 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -98,7 +103,7 @@ public class StepAppOpenHelper extends SQLiteOpenHelper {
 
     public static Map<Integer, Integer> loadStepsByHour(Context context, String date){
         // 1. Define a map to store the hour and number of steps as key-value pairs
-        Map<Integer, Integer>  map = new HashMap<>();
+        Map<Integer, Integer>  map = new TreeMap<>();
 
         // 2. Get the readable database
         StepAppOpenHelper databaseHelper = new StepAppOpenHelper(context);
@@ -131,11 +136,12 @@ public class StepAppOpenHelper extends SQLiteOpenHelper {
 
     public static Map<String , Integer> loadStepsByWeek(Context context, Date date) {
 
-        Map<String, Integer>  map = new HashMap<>();
+        Map<String, Integer>  map = new TreeMap<>();
 
         StepAppOpenHelper databaseHelper = new StepAppOpenHelper(context);
         SQLiteDatabase database = databaseHelper.getReadableDatabase();
 
+        // this query return the last 7 days with steps, not necessarily the last 7 days, if a day has no step it is ignored
         Cursor cursor = database.rawQuery("SELECT day, COUNT(*)  FROM num_steps " +
                 "WHERE day <= ? GROUP BY day ORDER BY  day DESC LIMIT 7", new String [] {date.toString()});
 
@@ -146,12 +152,45 @@ public class StepAppOpenHelper extends SQLiteOpenHelper {
 
             map.put(tmpKey, tmpValue);
 
-
             cursor.moveToNext();
         }
 
         cursor.close();
         database.close();
+
+        String current_time = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        return cleanMap(map, current_time);
+    }
+
+    private static Map<String, Integer> cleanMap(Map<String, Integer> map, String currentDate) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate now = LocalDate.parse(currentDate, dtf);
+        Period period = Period.of(0, 0, 7);
+        LocalDate limit = now.minus(period);
+
+        List<String> keysToRemove = new ArrayList<>();
+        // remove extra dates
+        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            String key = entry.getKey();
+            LocalDate entryTime = LocalDate.parse(key, dtf);
+            // if the event happened 7 days before current day
+            if (entryTime.isBefore(limit)) {
+                keysToRemove.add(key);
+            }
+
+        }
+        for (String el: keysToRemove) {
+            map.remove(el);
+        }
+
+        // add missing days
+        for (int i = 0; i <= 7; i++) {
+            Period currentInterval = Period.of(0, 0, i);
+            LocalDate checkDate = now.minus(currentInterval);
+            if (!map.containsKey(checkDate.format(dtf))) {
+                map.put(checkDate.format(dtf), 0);
+            }
+        }
 
         return map;
     }
