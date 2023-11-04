@@ -174,7 +174,7 @@ public class StepAppOpenHelper extends SQLiteOpenHelper {
             String key = entry.getKey();
             LocalDate entryTime = LocalDate.parse(key, dtf);
             // if the event happened 7 days before current day
-            if (entryTime.isBefore(limit)) {
+            if (entryTime.isBefore(limit) || entryTime.isEqual(limit)) {
                 keysToRemove.add(key);
             }
 
@@ -184,7 +184,7 @@ public class StepAppOpenHelper extends SQLiteOpenHelper {
         }
 
         // add missing days
-        for (int i = 0; i <= 7; i++) {
+        for (int i = 0; i < 7; i++) {
             Period currentInterval = Period.of(0, 0, i);
             LocalDate checkDate = now.minus(currentInterval);
             if (!map.containsKey(checkDate.format(dtf))) {
